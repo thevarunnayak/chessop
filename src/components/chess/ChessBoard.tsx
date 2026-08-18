@@ -150,6 +150,17 @@ export function ChessBoard({
       : {}),
   };
 
+  if (!mounted) {
+    return (
+      <div
+        className={cn("relative w-full max-w-[min(560px,calc(100vh-15rem))] aspect-square rounded-xl overflow-hidden border border-surface-border bg-surface shadow-2xl select-none flex items-center justify-center min-h-[300px]", className)}
+        style={style}
+      >
+        <div className="w-10 h-10 border-4 border-brand-accent/30 border-t-brand-accent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn("relative w-full max-w-[min(560px,calc(100vh-15rem))] aspect-square rounded-xl overflow-hidden border border-surface-border bg-surface shadow-2xl select-none flex items-center justify-center min-h-[300px]", className)}

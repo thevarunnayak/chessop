@@ -58,7 +58,7 @@ export default function OpeningDetailPage({ params }: OpeningDetailPageProps) {
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
             {opening.name}
           </h1>
 

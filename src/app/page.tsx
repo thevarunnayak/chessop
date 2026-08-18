@@ -48,7 +48,6 @@ export default function Home() {
             alt=""
             width={520}
             height={520}
-            priority
             className="w-full h-full object-contain"
           />
         </div>

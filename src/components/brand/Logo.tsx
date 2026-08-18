@@ -42,7 +42,6 @@ export function Logo({
           alt="ChessOp Crest Emblem"
           width={sizes.iconSize * 2}
           height={sizes.iconSize * 2}
-          priority
           className="w-full h-full object-contain drop-shadow-[0_2px_10px_rgba(212,160,23,0.35)] transition-transform duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_4px_16px_rgba(212,160,23,0.55)]"
         />
       </div>

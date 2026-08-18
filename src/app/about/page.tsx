@@ -11,7 +11,7 @@ export default function AboutPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-gold/10 border border-brand-gold/20 text-xs font-mono text-brand-gold font-bold">
             Official Brand & Graph Encyclopedia
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
             ChessOp Explorer
           </h1>
           <p className="text-sm text-gray-300 max-w-xl leading-relaxed">
