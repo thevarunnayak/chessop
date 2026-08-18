@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, BookOpen, Layers, Folder, Target, Info, Menu, X } from "lucide-react";
+import { Compass, BookOpen, Layers, Folder, Target, GitBranch, Zap, Info, Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
@@ -13,6 +13,8 @@ const navItems = [
   { href: "/eco", label: "ECO Code", icon: Layers },
   { href: "/collections", label: "Collections", icon: Folder },
   { href: "/practice", label: "Practice", icon: Target },
+  { href: "/graph", label: "Theory Graph", icon: GitBranch },
+  { href: "/traps", label: "Traps Guide", icon: Zap },
   { href: "/about", label: "About", icon: Info },
 ];
 

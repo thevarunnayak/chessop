@@ -1,48 +1,86 @@
 "use client";
 
+import { Chess } from "chess.js";
+
+export interface PvLine {
+  cp?: number;
+  mate?: number;
+  bestMoveSan?: string;
+  uciMoves: string[];
+  pvSan: string[];
+}
+
 export interface EngineEvalResult {
   fen: string;
   depth: number;
-  cp?: number;         // Centipawns (+24 = +0.24)
-  mate?: number;       // Mate in N moves
-  bestMoveSan?: string; // Best move in SAN
-  pvSan: string[];     // Principal Variation line in SAN moves
+  pvs: PvLine[];
   isCloud: boolean;
 }
 
-export async function fetchEngineEvaluation(fen: string, movesHistory: string[] = []): Promise<EngineEvalResult | null> {
+export async function fetchEngineEvaluation(fen: string, multiPvCount: number = 3): Promise<EngineEvalResult | null> {
   try {
     const encodedFen = encodeURIComponent(fen);
-    const res = await fetch(`https://lichess.org/api/cloud-eval?fen=${encodedFen}`);
+    const res = await fetch(`https://lichess.org/api/cloud-eval?fen=${encodedFen}&multiPv=${multiPvCount}`);
 
     if (!res.ok) {
-      return fallbackEval(fen);
+      return fallbackMultiPvEval(fen);
     }
 
     const data = await res.json();
     if (!data.pvs || data.pvs.length === 0) {
-      return fallbackEval(fen);
+      return fallbackMultiPvEval(fen);
     }
 
-    const primaryPv = data.pvs[0];
-    const uciMoves: string[] = primaryPv.moves ? primaryPv.moves.split(/\s+/).filter(Boolean) : [];
+    const parsedPvs: PvLine[] = data.pvs.slice(0, multiPvCount).map((pv: any) => {
+      const uciMoves: string[] = pv.moves ? pv.moves.split(/\s+/).filter(Boolean) : [];
+      const pvSan = uciToSanLine(fen, uciMoves.slice(0, 6));
+
+      return {
+        cp: pv.cp,
+        mate: pv.mate,
+        bestMoveSan: pvSan[0] || uciMoves[0],
+        uciMoves: uciMoves.slice(0, 6),
+        pvSan,
+      };
+    });
 
     return {
       fen: data.fen || fen,
       depth: data.depth || 30,
-      cp: primaryPv.cp,
-      mate: primaryPv.mate,
-      bestMoveSan: uciMoves[0] || undefined,
-      pvSan: uciMoves.slice(0, 5),
+      pvs: parsedPvs,
       isCloud: true,
     };
   } catch {
-    return fallbackEval(fen);
+    return fallbackMultiPvEval(fen);
   }
 }
 
-function fallbackEval(fen: string): EngineEvalResult {
-  // Fallback material count evaluation if offline
+function uciToSanLine(fen: string, uciMoves: string[]): string[] {
+  try {
+    const chess = new Chess(fen);
+    const sanMoves: string[] = [];
+
+    for (const uci of uciMoves) {
+      const from = uci.slice(0, 2);
+      const to = uci.slice(2, 4);
+      const promotion = uci.length > 4 ? uci.slice(4, 5) : undefined;
+
+      const moveRes = chess.move({ from, to, promotion });
+      if (moveRes) {
+        sanMoves.push(moveRes.san);
+      } else {
+        break;
+      }
+    }
+
+    return sanMoves;
+  } catch {
+    return [];
+  }
+}
+
+function fallbackMultiPvEval(fen: string): EngineEvalResult {
+  // Material-based evaluation fallback when offline
   const pieces: Record<string, number> = {
     p: 1, P: -1,
     n: 3, N: -3,
@@ -67,8 +105,14 @@ function fallbackEval(fen: string): EngineEvalResult {
   return {
     fen,
     depth: 12,
-    cp: diff * 100,
-    pvSan: [],
+    pvs: [
+      {
+        cp: diff * 100,
+        bestMoveSan: "N/A",
+        uciMoves: [],
+        pvSan: [],
+      },
+    ],
     isCloud: false,
   };
 }

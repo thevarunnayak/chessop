@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Collection, CollectionItem } from "@/types/collection";
 import {
@@ -10,10 +10,35 @@ import {
   removeItemFromCollection,
   updateItemNote,
 } from "@/lib/openings/collectionsService";
-import { Folder, FolderPlus, BookOpen, Trash2, Edit3, Compass, ArrowRight, Plus, Check, FileText, HardDrive } from "lucide-react";
+import {
+  exportCollectionToPGN,
+  downloadFile,
+  exportAllToJSONBackup,
+  importPgnTextToCollection,
+  restoreJSONBackup,
+} from "@/lib/chess/pgnService";
+import {
+  Folder,
+  FolderPlus,
+  BookOpen,
+  Trash2,
+  Edit3,
+  Compass,
+  ArrowRight,
+  Plus,
+  Check,
+  FileText,
+  HardDrive,
+  Download,
+  Upload,
+  FileCode,
+  CheckCircle2,
+  AlertCircle,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
-function CollectionsContent() {
+export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [activeColId, setActiveColId] = useState<string>("");
   const [editingNoteItemId, setEditingNoteItemId] = useState<string | null>(null);
@@ -24,6 +49,13 @@ function CollectionsContent() {
   const [newColName, setNewColName] = useState("");
   const [newColDesc, setNewColDesc] = useState("");
   const [newColColor, setNewColColor] = useState("#3fb950");
+
+  // Import / Restore modal state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importPgnText, setImportPgnText] = useState("");
+  const [importSuccessMsg, setImportSuccessMsg] = useState("");
+  const [importErrorMsg, setImportErrorMsg] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const cols = getCollections();
@@ -72,6 +104,58 @@ function CollectionsContent() {
     setCollections(getCollections());
   }
 
+  function handleExportPGN() {
+    if (!activeCollection) return;
+    const pgnString = exportCollectionToPGN(activeCollection);
+    const sanitizedName = activeCollection.name.toLowerCase().replace(/[^a-z0-9]/g, "_");
+    downloadFile(pgnString, `${sanitizedName}_repertoire.pgn`, "text/plain");
+  }
+
+  function handleImportPGN(e: React.FormEvent) {
+    e.preventDefault();
+    setImportSuccessMsg("");
+    setImportErrorMsg("");
+
+    if (!activeCollection || !importPgnText.trim()) return;
+
+    const result = importPgnTextToCollection(importPgnText, activeCollection.id);
+    if (result.importedCount > 0) {
+      setImportSuccessMsg(`Successfully imported ${result.importedCount} study line(s) into ${activeCollection.name}!`);
+      setImportPgnText("");
+      setCollections(getCollections());
+      setTimeout(() => setShowImportModal(false), 2000);
+    } else {
+      setImportErrorMsg("Could not parse any valid PGN games. Please check your PGN format.");
+    }
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string;
+      if (!text) return;
+
+      if (file.name.endsWith(".json")) {
+        const success = restoreJSONBackup(text);
+        if (success) {
+          const updated = getCollections();
+          setCollections(updated);
+          if (updated.length > 0) setActiveColId(updated[0].id);
+          setImportSuccessMsg("Successfully restored JSON repertoire backup!");
+          setTimeout(() => setShowImportModal(false), 2000);
+        } else {
+          setImportErrorMsg("Invalid JSON backup file format.");
+        }
+      } else {
+        setImportPgnText(text);
+      }
+    };
+    reader.readAsText(file);
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header */}
@@ -79,18 +163,34 @@ function CollectionsContent() {
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground flex items-center gap-2.5">
             <Folder className="w-8 h-8 text-brand-gold" />
-            Preparation Collections
+            Preparation Collections & Backup
           </h1>
           <p className="text-sm text-gray-400 mt-1">
-            Organize your opening repertoire lines, study variations, and tournament prep notes
+            Organize, study, export, and backup your opening repertoire lines (PGN / JSON)
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 self-start md:self-auto">
-          <div className="flex items-center gap-1.5 text-xs text-brand-gold bg-brand-gold/10 border border-brand-gold/25 px-3 py-2 rounded-xl">
-            <HardDrive className="w-4 h-4 shrink-0 text-brand-gold" />
-            <span>Stored in your local browser storage</span>
-          </div>
+        <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+          <button
+            onClick={() => exportAllToJSONBackup()}
+            className="px-3.5 py-2 rounded-xl bg-surface-muted hover:bg-surface-hover border border-surface-border text-xs font-mono font-bold text-gray-300 hover:text-white transition-colors flex items-center gap-2 shadow-sm"
+            title="Download full JSON backup of all collections"
+          >
+            <Download className="w-4 h-4 text-brand-gold" />
+            <span>Backup All (JSON)</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setImportSuccessMsg("");
+              setImportErrorMsg("");
+              setShowImportModal(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-surface-muted hover:bg-surface-hover border border-surface-border text-xs font-mono font-bold text-gray-300 hover:text-white transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <Upload className="w-4 h-4 text-brand-accent" />
+            <span>Import PGN / Restore</span>
+          </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
@@ -155,7 +255,7 @@ function CollectionsContent() {
           {activeCollection && (
             <div className="lg:col-span-8 space-y-6">
               {/* Active Collection Header */}
-              <div className="flex items-center justify-between p-6 rounded-2xl border border-surface-border bg-surface shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl border border-surface-border bg-surface shadow-md">
                 <div className="flex items-center gap-3">
                   <span
                     className="w-4 h-4 rounded-full shrink-0"
@@ -169,13 +269,25 @@ function CollectionsContent() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => handleDeleteCollection(activeCollection.id)}
-                  className="p-2 rounded-xl text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-colors"
-                  title="Delete Collection"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportPGN}
+                    disabled={activeCollection.items.length === 0}
+                    className="px-3 py-1.5 rounded-xl border border-brand-accent/40 bg-brand-accent/10 text-brand-accent hover:bg-brand-accent/20 disabled:opacity-40 disabled:hover:bg-brand-accent/10 text-xs font-mono font-bold transition-colors flex items-center gap-1.5"
+                    title="Export collection as PGN file"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export PGN</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteCollection(activeCollection.id)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-colors"
+                    title="Delete Collection"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Items List */}
@@ -223,33 +335,30 @@ function CollectionsContent() {
                             <button
                               onClick={() => handleRemoveItem(item.id)}
                               className="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-surface-muted transition-colors"
-                              title="Remove from collection"
+                              title="Remove item"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
 
-                        {/* Move Sequence */}
+                        {/* Move sequence preview */}
                         {item.moves && item.moves.length > 0 && (
-                          <div className="p-2.5 rounded-xl bg-surface-muted border border-surface-border/50 font-mono text-xs text-gray-300 flex flex-wrap gap-1.5">
-                            {item.moves.map((m, idx) => (
-                              <span key={idx} className="px-2 py-0.5 rounded bg-background text-gray-200 border border-surface-border/50">
-                                {idx % 2 === 0 ? `${Math.floor(idx / 2) + 1}.` : ""} {m}
-                              </span>
-                            ))}
+                          <div className="p-2.5 rounded-xl border border-surface-border bg-surface-muted font-mono text-xs text-brand-gold break-words">
+                            {item.moves.join(" ")}
                           </div>
                         )}
 
-                        {/* Prep Note Section */}
-                        <div className="pt-2 border-t border-surface-border/50">
+                        {/* Note area */}
+                        <div className="pt-2 border-t border-surface-border/60">
                           {isEditingNote ? (
                             <div className="space-y-2">
                               <textarea
                                 value={editedNoteText}
                                 onChange={(e) => setEditedNoteText(e.target.value)}
-                                rows={3}
-                                className="w-full p-3 rounded-xl border border-surface-border bg-background text-xs text-foreground focus:border-brand-accent focus:outline-none resize-none"
+                                placeholder="Add notes, ideas, or tactical key points..."
+                                className="w-full p-2.5 rounded-xl border border-surface-border bg-surface-muted text-xs text-foreground placeholder-gray-500 focus:outline-none focus:border-brand-accent font-sans"
+                                rows={2}
                               />
                               <div className="flex items-center gap-2 justify-end">
                                 <button
@@ -260,33 +369,26 @@ function CollectionsContent() {
                                 </button>
                                 <button
                                   onClick={() => handleSaveNote(item.id)}
-                                  className="px-3 py-1 rounded-lg bg-brand text-white text-xs font-mono font-bold flex items-center gap-1"
+                                  className="px-3 py-1 rounded-lg bg-brand-accent text-black font-mono font-bold text-xs hover:bg-brand-accent-hover"
                                 >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Save Note</span>
+                                  Save Note
                                 </button>
                               </div>
                             </div>
                           ) : (
-                            <div className="flex items-start justify-between gap-3 group">
-                              <div className="flex items-start gap-2 text-xs text-gray-300">
-                                <FileText className="w-4 h-4 text-brand-gold shrink-0 mt-0.5" />
-                                {item.note ? (
-                                  <p className="leading-relaxed whitespace-pre-wrap">{item.note}</p>
-                                ) : (
-                                  <p className="text-gray-500 italic">No preparation note added yet.</p>
-                                )}
-                              </div>
-
+                            <div className="flex items-start justify-between gap-3 text-xs">
+                              <p className="text-gray-400 italic">
+                                {item.note ? `Note: ${item.note}` : "No custom note added."}
+                              </p>
                               <button
                                 onClick={() => {
                                   setEditingNoteItemId(item.id);
                                   setEditedNoteText(item.note || "");
                                 }}
-                                className="p-1 rounded text-gray-400 hover:text-white transition-colors shrink-0"
-                                title="Edit Prep Note"
+                                className="text-gray-500 hover:text-brand-accent flex items-center gap-1 font-mono text-[11px] shrink-0"
                               >
-                                <Edit3 className="w-3.5 h-3.5" />
+                                <Edit3 className="w-3 h-3" />
+                                <span>Edit Note</span>
                               </button>
                             </div>
                           )}
@@ -301,47 +403,73 @@ function CollectionsContent() {
         </div>
       )}
 
-      {/* Create New Collection Modal */}
+      {/* Create Collection Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-surface-border bg-surface p-6 space-y-4">
-            <h3 className="text-lg font-bold text-foreground">Create Repertoire Collection</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md p-6 rounded-2xl border border-surface-border bg-surface shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-surface-border pb-3">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-brand-gold" />
+                <span>Create Preparation Collection</span>
+              </h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={handleCreateCollection} className="space-y-4">
-              <div>
-                <label className="text-xs font-mono text-gray-400 block mb-1">Collection Name</label>
+              <div className="space-y-1">
+                <label className="text-xs font-mono text-gray-400">Collection Name</label>
                 <input
                   type="text"
-                  placeholder="e.g., Sicilian Defense Repertoire"
+                  required
                   value={newColName}
                   onChange={(e) => setNewColName(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-surface-border bg-background text-xs text-foreground focus:border-brand-accent focus:outline-none"
-                  autoFocus
+                  placeholder="e.g. Sicilian Dragon Prep"
+                  className="w-full p-2.5 rounded-xl border border-surface-border bg-surface-muted text-xs text-foreground focus:outline-none focus:border-brand-accent"
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-mono text-gray-400 block mb-1">Description (Optional)</label>
+              <div className="space-y-1">
+                <label className="text-xs font-mono text-gray-400">Description (Optional)</label>
                 <input
                   type="text"
-                  placeholder="e.g., Main lines against 1.e4 for Black"
                   value={newColDesc}
                   onChange={(e) => setNewColDesc(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl border border-surface-border bg-background text-xs text-foreground focus:border-brand-accent focus:outline-none"
+                  placeholder="e.g. Yugoslav Attack main line variations"
+                  className="w-full p-2.5 rounded-xl border border-surface-border bg-surface-muted text-xs text-foreground focus:outline-none focus:border-brand-accent"
                 />
               </div>
 
-              <div className="flex items-center gap-3 justify-end pt-2">
+              <div className="space-y-1">
+                <label className="text-xs font-mono text-gray-400">Color Tag</label>
+                <div className="flex items-center gap-3">
+                  {["#3fb950", "#a371f7", "#d29922", "#f85149", "#58a6ff"].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setNewColColor(c)}
+                      className={cn(
+                        "w-7 h-7 rounded-full transition-transform border-2",
+                        newColColor === c ? "scale-110 border-white" : "border-transparent"
+                      )}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl border border-surface-border text-xs font-mono text-gray-300 hover:bg-surface-hover"
+                  className="px-4 py-2 rounded-xl text-xs font-mono text-gray-400 hover:text-white"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={!newColName.trim()}
-                  className="px-5 py-2 rounded-xl bg-brand text-white text-xs font-mono font-bold disabled:opacity-40"
+                  className="px-4 py-2 rounded-xl bg-brand text-white font-mono font-bold text-xs hover:bg-brand/90 shadow-md"
                 >
                   Create Collection
                 </button>
@@ -350,17 +478,85 @@ function CollectionsContent() {
           </div>
         </div>
       )}
+
+      {/* Import PGN & Restore JSON Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg p-6 rounded-2xl border border-surface-border bg-surface shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-surface-border pb-3">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Upload className="w-5 h-5 text-brand-accent" />
+                <span>Import PGN / Restore Backup</span>
+              </h3>
+              <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {importSuccessMsg && (
+              <div className="p-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 text-xs font-mono flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{importSuccessMsg}</span>
+              </div>
+            )}
+
+            {importErrorMsg && (
+              <div className="p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-rose-300 text-xs font-mono flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{importErrorMsg}</span>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* File Upload Trigger */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="p-6 rounded-2xl border-2 border-dashed border-surface-border hover:border-brand-accent/50 bg-surface-muted/50 cursor-pointer text-center space-y-2 transition-colors"
+              >
+                <FileCode className="w-8 h-8 mx-auto text-brand-accent" />
+                <p className="text-xs font-mono font-bold text-gray-200">Click to upload .PGN or .JSON backup file</p>
+                <p className="text-[11px] text-gray-400">Supports standard PGN files & ChessOp JSON backups</p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pgn,.json"
+                  className="hidden"
+                />
+              </div>
+
+              {/* Paste Raw PGN Input */}
+              <form onSubmit={handleImportPGN} className="space-y-3">
+                <label className="text-xs font-mono text-gray-400">Or Paste PGN Text Directly:</label>
+                <textarea
+                  value={importPgnText}
+                  onChange={(e) => setImportPgnText(e.target.value)}
+                  placeholder={`[Event "Sicilian Defense"]\n1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 *`}
+                  className="w-full p-3 rounded-xl border border-surface-border bg-surface-muted text-xs font-mono text-foreground placeholder-gray-500 focus:outline-none focus:border-brand-accent"
+                  rows={4}
+                />
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowImportModal(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-mono text-gray-400 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!importPgnText.trim()}
+                    className="px-4 py-2 rounded-xl bg-brand-accent text-black font-mono font-bold text-xs hover:bg-brand-accent-hover disabled:opacity-40 shadow-md"
+                  >
+                    Import PGN to {activeCollection?.name || "Collection"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  );
-}
-
-import { Suspense } from "react";
-import { LoadingSplash } from "@/components/brand/LoadingSplash";
-
-export default function CollectionsPage() {
-  return (
-    <Suspense fallback={<LoadingSplash fullScreen={false} message="Loading Repertoire Collections..." />}>
-      <CollectionsContent />
-    </Suspense>
   );
 }

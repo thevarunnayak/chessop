@@ -226,7 +226,7 @@ function ExplorerContent() {
             onAddToCollection={() => setShowCollectionModal(true)}
           />
 
-          <EngineAnalysis fen={fen} />
+          <EngineAnalysis fen={fen} onPlayMove={handleMove} />
 
           <TranspositionPanel transpositions={transpositions} />
 
