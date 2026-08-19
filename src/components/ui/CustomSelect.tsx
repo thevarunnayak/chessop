@@ -8,6 +8,7 @@ export interface SelectOption<T extends string = string> {
   value: T;
   label: string;
   icon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 interface CustomSelectProps<T extends string = string> {
@@ -56,12 +57,15 @@ export function CustomSelect<T extends string = string>({
           {selectedOption?.icon}
           {selectedOption?.label || placeholder}
         </span>
-        <ChevronDown
-          className={cn(
-            "w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200",
-            isOpen && "rotate-180 text-brand-accent"
-          )}
-        />
+        <div className="flex items-center gap-1.5 shrink-0">
+          {selectedOption?.rightIcon}
+          <ChevronDown
+            className={cn(
+              "w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200",
+              isOpen && "rotate-180 text-brand-accent"
+            )}
+          />
+        </div>
       </button>
 
       {isOpen && (
@@ -87,7 +91,7 @@ export function CustomSelect<T extends string = string>({
                   {opt.icon}
                   {opt.label}
                 </span>
-                {isSelected && <Check className="w-4 h-4 text-brand-accent shrink-0" />}
+                {opt.rightIcon && <span className="ml-2 shrink-0">{opt.rightIcon}</span>}
               </button>
             );
           })}

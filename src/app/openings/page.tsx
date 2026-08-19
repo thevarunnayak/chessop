@@ -5,15 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { getAllOpenings } from "@/lib/openings/service";
 import { EcoCategory, Opening } from "@/types/opening";
 import { InfiniteOpeningGrid } from "@/components/openings/InfiniteOpeningGrid";
-import { BookOpen, Search, Filter, Layers, ArrowUpDown, ArrowDownAZ, GitBranch } from "lucide-react";
+import { BookOpen, Search, Filter, Layers, ArrowUp, ArrowDown, ArrowUpDown, ArrowDownAZ, GitBranch } from "lucide-react";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
 import { cn } from "@/lib/utils/cn";
 
-const SORT_OPTIONS: SelectOption<"eco" | "name" | "depth">[] = [
-  { value: "eco", label: "ECO Code", icon: <ArrowUpDown className="w-3.5 h-3.5 text-brand-gold shrink-0" /> },
-  { value: "name", label: "Name (A-Z)", icon: <ArrowDownAZ className="w-3.5 h-3.5 text-brand-accent shrink-0" /> },
-  { value: "depth", label: "Move Depth", icon: <GitBranch className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> },
-];
+export type SortField = "eco" | "name" | "depth" | "none";
+export type SortDirection = "asc" | "desc" | "none";
 
 const CATEGORIES: { id: "ALL" | EcoCategory; label: string }[] = [
   { id: "ALL", label: "All Volumes" },
@@ -30,7 +27,8 @@ function OpeningsContent() {
 
   const [selectedCategory, setSelectedCategory] = useState<"ALL" | EcoCategory>("ALL");
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [sortOption, setSortOption] = useState<"eco" | "name" | "depth">("eco");
+  const [sortField, setSortField] = useState<SortField>("eco");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   useEffect(() => {
     const q = searchParams.get("q") || searchParams.get("search") || "";
@@ -41,27 +39,109 @@ function OpeningsContent() {
 
   const allOpenings = useMemo(() => getAllOpenings(), []);
 
+  // 3-State Sort Cycle: 1st click = Ascending (↑), 2nd click = Descending (↓), 3rd click = Unsorted (OFF)
+  function handleSortSelect(field: SortField) {
+    if (field === "none") {
+      setSortField("none");
+      setSortDirection("none");
+      return;
+    }
+
+    if (sortField === field) {
+      if (sortDirection === "asc") {
+        setSortDirection("desc");
+      } else if (sortDirection === "desc") {
+        setSortField("none");
+        setSortDirection("none");
+      } else {
+        setSortField(field);
+        setSortDirection("asc");
+      }
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  }
+
+  // Generate dynamic dropdown option labels with directional up/down arrows at the right end
+  const sortOptions = useMemo<SelectOption<SortField>[]>(() => {
+    return [
+      {
+        value: "eco",
+        label: "ECO Code",
+        icon: <ArrowUpDown className="w-3.5 h-3.5 text-brand-gold shrink-0" />,
+        rightIcon:
+          sortField === "eco" ? (
+            sortDirection === "asc" ? (
+              <ArrowUp className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : sortDirection === "desc" ? (
+              <ArrowDown className="w-4 h-4 text-brand-gold shrink-0" />
+            ) : undefined
+          ) : undefined,
+      },
+      {
+        value: "name",
+        label: "Name (A-Z)",
+        icon: <ArrowDownAZ className="w-3.5 h-3.5 text-brand-accent shrink-0" />,
+        rightIcon:
+          sortField === "name" ? (
+            sortDirection === "asc" ? (
+              <ArrowUp className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : sortDirection === "desc" ? (
+              <ArrowDown className="w-4 h-4 text-brand-gold shrink-0" />
+            ) : undefined
+          ) : undefined,
+      },
+      {
+        value: "depth",
+        label: "Move Depth",
+        icon: <GitBranch className="w-3.5 h-3.5 text-emerald-400 shrink-0" />,
+        rightIcon:
+          sortField === "depth" ? (
+            sortDirection === "asc" ? (
+              <ArrowUp className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : sortDirection === "desc" ? (
+              <ArrowDown className="w-4 h-4 text-brand-gold shrink-0" />
+            ) : undefined
+          ) : undefined,
+      },
+      {
+        value: "none",
+        label: "Unsorted (Default)",
+        icon: <Filter className="w-3.5 h-3.5 text-gray-400 shrink-0" />,
+      },
+    ];
+  }, [sortField, sortDirection]);
+
   const filteredOpenings = useMemo(() => {
-    return allOpenings
-      .filter((op) => {
-        if (selectedCategory !== "ALL" && op.category !== selectedCategory) return false;
-        if (!searchQuery.trim()) return true;
+    let result = allOpenings.filter((op) => {
+      if (selectedCategory !== "ALL" && op.category !== selectedCategory) return false;
+      if (!searchQuery.trim()) return true;
 
-        const q = searchQuery.toLowerCase().trim();
-        return (
-          op.name.toLowerCase().includes(q) ||
-          op.eco.toLowerCase().includes(q) ||
-          op.moves.join(" ").toLowerCase().includes(q)
-        );
-      })
-      .sort((a, b) => {
-        if (sortOption === "name") return a.name.localeCompare(b.name);
-        if (sortOption === "depth") return b.moves.length - a.moves.length;
-        return a.eco.localeCompare(b.eco);
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        op.name.toLowerCase().includes(q) ||
+        op.eco.toLowerCase().includes(q) ||
+        op.moves.join(" ").toLowerCase().includes(q)
+      );
+    });
+
+    if (sortField !== "none" && sortDirection !== "none") {
+      result = [...result].sort((a, b) => {
+        let cmp = 0;
+        if (sortField === "name") {
+          cmp = a.name.localeCompare(b.name);
+        } else if (sortField === "depth") {
+          cmp = a.moves.length - b.moves.length;
+        } else if (sortField === "eco") {
+          cmp = a.eco.localeCompare(b.eco);
+        }
+        return sortDirection === "asc" ? cmp : -cmp;
       });
-  }, [allOpenings, selectedCategory, searchQuery, sortOption]);
+    }
 
-  const displayedOpenings = filteredOpenings.slice(0, 48);
+    return result;
+  }, [allOpenings, selectedCategory, searchQuery, sortField, sortDirection]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -103,8 +183,8 @@ function OpeningsContent() {
           ))}
         </div>
 
-        {/* Input & Sort */}
-        <div className="flex items-center gap-3">
+        {/* Search Input & Dynamic Sort Dropdown with Direction Arrows */}
+        <div className="flex items-center gap-2.5">
           <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
             <input
@@ -116,11 +196,12 @@ function OpeningsContent() {
             />
           </div>
 
+          {/* Custom Select Sort Field with Integrated Direction Arrows */}
           <CustomSelect
-            value={sortOption}
-            options={SORT_OPTIONS}
-            onChange={(val) => setSortOption(val)}
-            className="w-44"
+            value={sortField}
+            options={sortOptions}
+            onChange={(val) => handleSortSelect(val)}
+            className="w-56 sm:w-60"
           />
         </div>
       </div>
