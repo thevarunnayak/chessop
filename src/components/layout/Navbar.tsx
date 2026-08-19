@@ -28,9 +28,9 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-surface-border bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
-        <a href="/">
+        <Link href="/">
           <Logo size="md" />
-        </a>
+        </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-1 ml-auto">
@@ -39,7 +39,7 @@ export function Navbar() {
             const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
 
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
@@ -51,7 +51,7 @@ export function Navbar() {
               >
                 <Icon className="w-4 h-4" />
                 {t(item.key as any)}
-              </a>
+              </Link>
             );
           })}
         </nav>
@@ -77,7 +77,7 @@ export function Navbar() {
             const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
 
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
@@ -90,7 +90,7 @@ export function Navbar() {
               >
                 <Icon className="w-5 h-5" />
                 {t(item.key as any)}
-              </a>
+              </Link>
             );
           })}
         </div>

@@ -43,6 +43,7 @@ function ExplorerContent() {
   const [showCollectionModal, setShowCollectionModal] = useState(false);
 
   const [, startTransition] = useTransition();
+  const [fullMoveLine, setFullMoveLine] = useState<string[]>([]);
 
   // Load URL parameters on mount
   useEffect(() => {
@@ -59,11 +60,13 @@ function ExplorerContent() {
       const newHist = engine.getHistory();
       setFen(newFen);
       setHistory(newHist);
+      setFullMoveLine(moves);
       setCurrentMoveIndex(newHist.length - 1);
     } else if (fenParam) {
       if (engine.loadFen(fenParam)) {
         setFen(engine.getFen());
         setHistory([]);
+        setFullMoveLine([]);
         setCurrentMoveIndex(-1);
       }
     }
@@ -100,6 +103,8 @@ function ExplorerContent() {
       }
 
       startTransition(() => {
+        const newHist = engine.getHistory().map((h) => h.san);
+        setFullMoveLine(newHist);
         syncState();
       });
       return true;
@@ -120,6 +125,8 @@ function ExplorerContent() {
       }
 
       startTransition(() => {
+        const newHist = engine.getHistory().map((h) => h.san);
+        setFullMoveLine(newHist);
         syncState();
       });
     }
@@ -135,12 +142,27 @@ function ExplorerContent() {
     syncState();
   }
 
-  function handleNext() {}
+  function handleNext() {
+    if (currentMoveIndex < fullMoveLine.length - 1) {
+      const nextMove = fullMoveLine[currentMoveIndex + 1];
+      if (nextMove && engine.makeMove(nextMove)) {
+        soundManager.playMove();
+        syncState();
+      }
+    }
+  }
 
-  function handleLast() {}
+  function handleLast() {
+    for (let i = currentMoveIndex + 1; i < fullMoveLine.length; i++) {
+      engine.makeMove(fullMoveLine[i]);
+    }
+    soundManager.playMove();
+    syncState();
+  }
 
   function handleReset() {
     engine.reset();
+    setFullMoveLine([]);
     syncState();
   }
 
@@ -216,7 +238,7 @@ function ExplorerContent() {
             onReset={handleReset}
             onFlip={() => setOrientation(orientation === "white" ? "black" : "white")}
             canPrevious={history.length > 0}
-            canNext={false}
+            canNext={currentMoveIndex < fullMoveLine.length - 1}
           />
 
           <OpeningHeader

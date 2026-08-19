@@ -6,6 +6,8 @@ import { buildOpeningGraph, GraphNode } from "@/lib/openings/graphService";
 import { getTranspositions, getOpeningById } from "@/lib/openings/service";
 import { ChessGameEngine } from "@/lib/chess/engine";
 import { ChessBoard } from "@/components/chess/ChessBoard";
+import { MoveControls } from "@/components/chess/MoveControls";
+import { BoardOrientation } from "@/types/chess";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
 import { cn } from "@/lib/utils/cn";
 import {
@@ -43,6 +45,14 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [maxDepth, setMaxDepth] = useState(5);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [drawerMoveIndex, setDrawerMoveIndex] = useState<number>(0);
+  const [drawerOrientation, setDrawerOrientation] = useState<BoardOrientation>("white");
+
+  useEffect(() => {
+    if (selectedNode) {
+      setDrawerMoveIndex(selectedNode.moves.length);
+    }
+  }, [selectedNode]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -57,6 +67,18 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
   const graphData = useMemo(() => {
     return buildOpeningGraph(activeCategory, searchQuery, maxDepth);
   }, [activeCategory, searchQuery, maxDepth]);
+
+  // Calculate FEN array for all steps of the selected node's line
+  const drawerFens = useMemo(() => {
+    if (!selectedNode) return [];
+    const engine = new ChessGameEngine();
+    const fens: string[] = [engine.getFen()];
+    for (const m of selectedNode.moves) {
+      engine.makeMove(m);
+      fens.push(engine.getFen());
+    }
+    return fens;
+  }, [selectedNode]);
 
   // Compute selected node board position & transpositions
   const selectedNodeDetails = useMemo(() => {
@@ -77,9 +99,11 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
     };
   }, [selectedNode]);
 
+  const activeDrawerFen = drawerFens[drawerMoveIndex] ?? selectedNodeDetails?.fen ?? "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
   // Helper to keep canvas within sensible drag boundaries
   function clampPan(newPan: { x: number; y: number }, currentZoom: number) {
-    const minX = -3500 * currentZoom;
+    const minX = -6000 * currentZoom;
     const maxX = 1500 * currentZoom;
     const minY = -4500 * currentZoom;
     const maxY = 4500 * currentZoom;
@@ -440,14 +464,25 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
 
           {/* Scrollable Middle Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Interactive Board Preview */}
-            <div className="flex justify-center my-1">
+            {/* Interactive Board Preview & Move Controls */}
+            <div className="flex flex-col items-center gap-3">
               <ChessBoard
-                fen={selectedNodeDetails.fen}
+                fen={activeDrawerFen}
+                orientation={drawerOrientation}
                 isInteractive={false}
                 showCoordinates={false}
                 hasBackground={false}
                 className="max-w-[230px] rounded-lg"
+              />
+              <MoveControls
+                onFirst={() => setDrawerMoveIndex(0)}
+                onPrevious={() => setDrawerMoveIndex((idx) => Math.max(0, idx - 1))}
+                onNext={() => setDrawerMoveIndex((idx) => Math.min(selectedNode.moves.length, idx + 1))}
+                onLast={() => setDrawerMoveIndex(selectedNode.moves.length)}
+                onReset={() => setDrawerMoveIndex(selectedNode.moves.length)}
+                onFlip={() => setDrawerOrientation((o) => (o === "white" ? "black" : "white"))}
+                canPrevious={drawerMoveIndex > 0}
+                canNext={drawerMoveIndex < selectedNode.moves.length}
               />
             </div>
 

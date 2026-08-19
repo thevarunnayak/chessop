@@ -7,6 +7,7 @@ import {
   getOpeningsByEco,
   getTranspositions,
 } from "../service";
+import { buildOpeningGraph } from "../graphService";
 
 describe("Opening Data Service", () => {
   it("should fetch opening by slug ID", () => {
@@ -42,5 +43,15 @@ describe("Opening Data Service", () => {
   it("should filter openings by ECO code prefix", () => {
     const b20s = getOpeningsByEco("B20");
     expect(b20s.length).toBeGreaterThan(0);
+  });
+
+  it("should calculate stage-wise horizontal spacing of 429px per depth level in theory graph", () => {
+    const graph = buildOpeningGraph("ALL", "", 3);
+    const depth1Node = graph.nodes.find((n) => n.depth === 1);
+    const depth2Node = graph.nodes.find((n) => n.depth === 2);
+    expect(depth1Node).toBeDefined();
+    expect(depth2Node).toBeDefined();
+    expect(depth1Node?.x).toBe(429);
+    expect(depth2Node?.x).toBe(858);
   });
 });
