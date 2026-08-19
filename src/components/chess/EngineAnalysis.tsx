@@ -5,6 +5,8 @@ import { EngineEvalResult, fetchEngineEvaluation, PvLine } from "@/lib/chess/eng
 import { Cpu, Zap, Activity, Play, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
+import { t } from "@/lib/i18n";
+
 interface EngineAnalysisProps {
   fen: string;
   onPlayMove?: (from: string, to: string) => void;
@@ -40,13 +42,13 @@ export function EngineAnalysis({ fen, onPlayMove, className }: EngineAnalysisPro
       <div className={cn("p-3 rounded-xl border border-surface-border bg-surface flex items-center justify-between", className)}>
         <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
           <Cpu className="w-4 h-4 text-brand-accent" />
-          <span>Stockfish Multi-PV Engine</span>
+          <span>{t("engine.headerTitle")}</span>
         </div>
         <button
           onClick={() => setIsEnabled(true)}
           className="px-3 py-1 rounded-lg border border-brand-accent/40 bg-brand-accent/10 text-brand-accent text-xs font-mono font-semibold hover:bg-brand-accent/20 transition-colors"
         >
-          Enable Engine
+          {t("engine.enableEngine")}
         </button>
       </div>
     );
@@ -89,11 +91,11 @@ export function EngineAnalysis({ fen, onPlayMove, className }: EngineAnalysisPro
         <div className="flex items-center gap-2">
           <Cpu className="w-4 h-4 text-brand-accent shrink-0" />
           <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-gray-200">
-            Stockfish 16 Multi-PV
+            {t("engine.headerTitle")}
           </h4>
           {evalResult?.isCloud && (
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-accent/10 text-brand-accent border border-brand-accent/30 shrink-0">
-              Cloud D{evalResult.depth}
+              {t("engine.cloudDepth", { depth: evalResult.depth })}
             </span>
           )}
         </div>
@@ -105,13 +107,13 @@ export function EngineAnalysis({ fen, onPlayMove, className }: EngineAnalysisPro
               onClick={() => setMultiPvCount(1)}
               className={cn("px-2 py-0.5 rounded transition-all", multiPvCount === 1 ? "bg-brand-accent text-black font-bold" : "text-gray-400 hover:text-white")}
             >
-              1 Line
+              {t("engine.oneLine")}
             </button>
             <button
               onClick={() => setMultiPvCount(3)}
               className={cn("px-2 py-0.5 rounded transition-all", multiPvCount === 3 ? "bg-brand-accent text-black font-bold" : "text-gray-400 hover:text-white")}
             >
-              3 Lines
+              {t("engine.threeLines")}
             </button>
           </div>
 
@@ -119,7 +121,7 @@ export function EngineAnalysis({ fen, onPlayMove, className }: EngineAnalysisPro
             onClick={() => setIsEnabled(false)}
             className="text-xs font-mono text-gray-400 hover:text-gray-200 shrink-0 ml-1"
           >
-            Disable
+            {t("engine.disableEngine")}
           </button>
         </div>
       </div>
@@ -127,9 +129,9 @@ export function EngineAnalysis({ fen, onPlayMove, className }: EngineAnalysisPro
       {/* Main Evaluation Meter Bar */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] font-mono">
-          <span className="text-emerald-400 font-bold">White {whitePercent.toFixed(0)}%</span>
+          <span className="text-emerald-400 font-bold">{t("common.white")} {whitePercent.toFixed(0)}%</span>
           <span className="text-gray-200 font-extrabold text-sm">{loading ? "..." : mainEvalText}</span>
-          <span className="text-gray-400 font-bold">Black {(100 - whitePercent).toFixed(0)}%</span>
+          <span className="text-gray-400 font-bold">{t("common.black")} {(100 - whitePercent).toFixed(0)}%</span>
         </div>
 
         <div className="h-3 w-full rounded-full bg-surface-border overflow-hidden flex">
@@ -149,7 +151,7 @@ export function EngineAnalysis({ fen, onPlayMove, className }: EngineAnalysisPro
         {loading ? (
           <div className="flex items-center justify-center py-4 text-xs font-mono text-gray-400 gap-2">
             <div className="w-3.5 h-3.5 border-2 border-brand-accent/40 border-t-brand-accent rounded-full animate-spin" />
-            <span>Evaluating top {multiPvCount} candidate lines...</span>
+            <span>{t("engine.evaluatingText", { count: multiPvCount })}</span>
           </div>
         ) : evalResult?.pvs && evalResult.pvs.length > 0 ? (
           evalResult.pvs.map((pv, idx) => {
@@ -194,7 +196,7 @@ export function EngineAnalysis({ fen, onPlayMove, className }: EngineAnalysisPro
                   <button
                     onClick={() => onPlayMove(firstUci.slice(0, 2), firstUci.slice(2, 4))}
                     className="p-1 rounded bg-brand-accent/10 hover:bg-brand-accent text-brand-accent hover:text-black transition-colors shrink-0"
-                    title={`Play move ${pv.bestMoveSan}`}
+                    title={t("engine.playMoveTitle", { move: pv.bestMoveSan || "" })}
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
                   </button>
@@ -204,7 +206,7 @@ export function EngineAnalysis({ fen, onPlayMove, className }: EngineAnalysisPro
           })
         ) : (
           <div className="text-xs font-mono text-gray-400 text-center py-2">
-            No evaluation available for this position.
+            {t("engine.noEval")}
           </div>
         )}
       </div>

@@ -17,6 +17,7 @@ import {
   importPgnTextToCollection,
   restoreJSONBackup,
 } from "@/lib/chess/pgnService";
+import { t } from "@/lib/i18n";
 import {
   Folder,
   FolderPlus,
@@ -163,10 +164,10 @@ export default function CollectionsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground flex items-center gap-2.5">
             <Folder className="w-8 h-8 text-brand-gold" />
-            Preparation Collections & Backup
+            {t("collections.title")}
           </h1>
           <p className="text-sm text-gray-400 mt-1">
-            Organize, study, export, and backup your opening repertoire lines (PGN / JSON)
+            {t("collections.subtitle")}
           </p>
         </div>
 
@@ -177,7 +178,7 @@ export default function CollectionsPage() {
             title="Download full JSON backup of all collections"
           >
             <Download className="w-4 h-4 text-brand-gold" />
-            <span>Backup All (JSON)</span>
+            <span>{t("collections.backupAllJson")}</span>
           </button>
 
           <button
@@ -189,7 +190,7 @@ export default function CollectionsPage() {
             className="px-3.5 py-2 rounded-xl bg-surface-muted hover:bg-surface-hover border border-surface-border text-xs font-mono font-bold text-gray-300 hover:text-white transition-colors flex items-center gap-2 shadow-sm"
           >
             <Upload className="w-4 h-4 text-brand-accent" />
-            <span>Import PGN / Restore</span>
+            <span>{t("collections.importPgnRestore")}</span>
           </button>
 
           <button
@@ -197,7 +198,7 @@ export default function CollectionsPage() {
             className="px-4 py-2 rounded-xl bg-brand text-white text-xs font-mono font-bold hover:bg-brand/90 transition-colors flex items-center gap-2 shadow-md shrink-0"
           >
             <FolderPlus className="w-4 h-4" />
-            <span>New Collection</span>
+            <span>{t("collections.newCollection")}</span>
           </button>
         </div>
       </div>

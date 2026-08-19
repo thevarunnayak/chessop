@@ -7,15 +7,17 @@ import { Logo } from "@/components/brand/Logo";
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
 
+import { t } from "@/lib/i18n";
+
 const navItems = [
-  { href: "/explorer", label: "Explorer", icon: Compass },
-  { href: "/openings", label: "Openings", icon: BookOpen },
-  { href: "/eco", label: "ECO Code", icon: Layers },
-  { href: "/collections", label: "Collections", icon: Folder },
-  { href: "/practice", label: "Practice", icon: Target },
-  { href: "/graph", label: "Theory Graph", icon: GitBranch },
-  { href: "/traps", label: "Traps Guide", icon: Zap },
-  { href: "/about", label: "About", icon: Info },
+  { href: "/explorer", key: "navbar.explorer", icon: Compass },
+  { href: "/openings", key: "navbar.openings", icon: BookOpen },
+  { href: "/eco", key: "navbar.eco", icon: Layers },
+  { href: "/collections", key: "navbar.collections", icon: Folder },
+  { href: "/practice", key: "navbar.practice", icon: Target },
+  { href: "/graph", key: "navbar.graph", icon: GitBranch },
+  { href: "/traps", key: "navbar.traps", icon: Zap },
+  { href: "/about", key: "navbar.about", icon: Info },
 ];
 
 export function Navbar() {
@@ -48,7 +50,7 @@ export function Navbar() {
                 )}
               >
                 <Icon className="w-4 h-4" />
-                {item.label}
+                {t(item.key as any)}
               </a>
             );
           })}
@@ -87,7 +89,7 @@ export function Navbar() {
                 )}
               >
                 <Icon className="w-5 h-5" />
-                {item.label}
+                {t(item.key as any)}
               </a>
             );
           })}

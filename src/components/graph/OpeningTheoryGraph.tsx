@@ -27,13 +27,15 @@ interface OpeningTheoryGraphProps {
   className?: string;
 }
 
+import { t } from "@/lib/i18n";
+
 const DEPTH_OPTIONS: SelectOption<string>[] = [
-  { value: "5", label: "5 Moves" },
-  { value: "8", label: "8 Moves" },
-  { value: "10", label: "10 Moves" },
-  { value: "12", label: "12 Moves" },
-  { value: "15", label: "15 Moves" },
-  { value: "20", label: "20 Moves (Full)" },
+  { value: "5", label: t("graph.movesCount", { count: 5 }) },
+  { value: "8", label: t("graph.movesCount", { count: 8 }) },
+  { value: "10", label: t("graph.movesCount", { count: 10 }) },
+  { value: "12", label: t("graph.movesCount", { count: 12 }) },
+  { value: "15", label: t("graph.movesCount", { count: 15 }) },
+  { value: "20", label: t("graph.movesCount", { count: 20 }) },
 ];
 
 export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningTheoryGraphProps) {
@@ -167,7 +169,7 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
                   : "bg-surface-muted text-gray-300 border-surface-border hover:bg-surface-hover hover:text-white"
               )}
             >
-              {cat === "ALL" ? "All Openings" : `Volume ${cat}`}
+              {cat === "ALL" ? t("graph.allOpenings") : t("graph.volume", { volume: cat })}
             </button>
           ))}
         </div>
@@ -181,7 +183,7 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search graph (e.g. Sicilian, D30)..."
+              placeholder={t("graph.searchPlaceholder")}
               className="pl-9 pr-3 py-1.5 bg-surface-muted border border-surface-border rounded-lg text-xs text-foreground placeholder-gray-500 focus:outline-none focus:border-brand-accent w-48 sm:w-64"
             />
             {searchQuery && (
@@ -193,7 +195,7 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
 
           {/* Custom Depth Dropdown */}
           <div className="hidden sm:flex items-center gap-2 border-l border-surface-border pl-3">
-            <span className="text-xs font-mono text-gray-400">Depth:</span>
+            <span className="text-xs font-mono text-gray-400">{t("graph.depth")}</span>
             <CustomSelect
               value={String(maxDepth)}
               options={DEPTH_OPTIONS}
@@ -211,18 +213,18 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
           <button
             onClick={() => setZoom((z) => Math.min(2.5, z * 1.2))}
             className="p-2 hover:bg-surface-hover rounded-lg text-gray-300 hover:text-white transition-colors"
-            title="Zoom In"
+            title={t("graph.zoomIn")}
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={() => setZoom((z) => Math.max(0.2, z / 1.2))}
             className="p-2 hover:bg-surface-hover rounded-lg text-gray-300 hover:text-white transition-colors"
-            title="Zoom Out"
+            title={t("graph.zoomOut")}
           >
             <ZoomOut className="w-4 h-4" />
           </button>
-          <button onClick={resetView} className="p-2 hover:bg-surface-hover rounded-lg text-gray-300 hover:text-white transition-colors" title="Reset Camera">
+          <button onClick={resetView} className="p-2 hover:bg-surface-hover rounded-lg text-gray-300 hover:text-white transition-colors" title={t("graph.resetCamera")}>
             <Maximize2 className="w-4 h-4" />
           </button>
         </div>
@@ -231,15 +233,15 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
         <div className="absolute bottom-4 left-4 z-20 hidden md:flex items-center gap-4 bg-surface/90 backdrop-blur border border-surface-border px-3.5 py-2 rounded-xl text-xs font-mono shadow-xl text-gray-300">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-brand-accent" />
-            <span>Main Line Node</span>
+            <span>{t("graph.legendMainLine")}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-brand-gold shadow-[0_0_8px_rgba(212,160,23,0.8)]" />
-            <span>Selected Node</span>
+            <span>{t("graph.legendSelected")}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-4 h-0.5 border-b-2 border-dashed border-amber-400" />
-            <span>Transposition Path</span>
+            <span>{t("graph.legendTransposition")}</span>
           </div>
         </div>
 
@@ -451,9 +453,9 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
 
             {/* Move Sequence */}
             <div className="space-y-1.5">
-              <span className="text-xs font-mono text-gray-400 uppercase font-bold tracking-wider">Move Line:</span>
+              <span className="text-xs font-mono text-gray-400 uppercase font-bold tracking-wider">{t("graph.moveLine")}</span>
               <div className="p-2.5 rounded-lg border border-surface-border bg-surface-muted font-mono text-xs text-brand-gold break-words">
-                {selectedNodeDetails.movesSan || "Starting position"}
+                {selectedNodeDetails.movesSan || t("graph.startPosition")}
               </div>
             </div>
 
@@ -462,7 +464,7 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
               <div className="space-y-2 border-t border-surface-border pt-3">
                 <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-brand-gold">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Transpositions Discovered ({selectedNodeDetails.transpositions.length})</span>
+                  <span>{t("graph.transpositionsCount", { count: selectedNodeDetails.transpositions.length })}</span>
                 </div>
                 <div className="space-y-1.5">
                   {selectedNodeDetails.transpositions.map((trans) => (
@@ -473,7 +475,7 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
                     >
                       <div className="flex items-center justify-between font-mono font-bold text-gray-200">
                         <span className="text-brand-accent">{trans.eco}</span>
-                        <span className="text-[10px] text-gray-400">{trans.moves.length} moves</span>
+                        <span className="text-[10px] text-gray-400">{trans.moves.length} {t("common.moves")}</span>
                       </div>
                       <div className="text-gray-300 font-sans mt-0.5 truncate">{trans.name}</div>
                     </Link>
@@ -490,7 +492,7 @@ export function OpeningTheoryGraph({ initialSearch = "", className }: OpeningThe
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-accent hover:bg-brand-accent-hover text-black font-bold text-xs transition-colors shadow-lg shadow-brand-accent/20"
             >
               <Compass className="w-4 h-4" />
-              <span>Explore Position in Board</span>
+              <span>{t("explorer.exploreInBoard")}</span>
               <ArrowRight className="w-4 h-4 ml-auto" />
             </Link>
           </div>

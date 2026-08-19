@@ -9,6 +9,7 @@ import { Collection } from "@/types/collection";
 import { EcoCategory } from "@/types/opening";
 import { BoardOrientation } from "@/types/chess";
 import { soundManager } from "@/lib/chess/sound";
+import { t } from "@/lib/i18n";
 import {
   Target,
   Trophy, 
@@ -463,10 +464,10 @@ export default function PracticePage() {
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground flex items-center gap-2.5">
             <Target className="w-8 h-8 text-brand-accent" />
-            Repertoire Trainer & Practice
+            {t("practice.title")}
           </h1>
           <p className="text-sm text-gray-400 mt-1">
-            Select a repertoire card below to practice move-by-move. Completed lines are marked green!
+            {t("practice.subtitle")}
           </p>
         </div>
 

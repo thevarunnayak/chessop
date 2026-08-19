@@ -4,6 +4,8 @@ import { OpeningTheoryGraph } from "@/components/graph/OpeningTheoryGraph";
 import { LoadingSplash } from "@/components/brand/LoadingSplash";
 import { GitBranch, Sparkles } from "lucide-react";
 
+import { t } from "@/lib/i18n";
+
 export const metadata: Metadata = {
   title: "Theory Graph & Transposition Visualizer — ChessOp",
   description:
@@ -18,16 +20,16 @@ export default function TheoryGraphPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-accent/10 border border-brand-accent/30 text-[11px] font-mono text-brand-accent font-bold mb-1">
             <Sparkles className="w-3 h-3" />
-            <span>Interactive Move-Tree & Transposition Graph</span>
+            <span>{t("graph.subtitle")}</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-foreground flex items-center gap-2">
             <GitBranch className="w-6 h-6 text-brand-gold" />
-            Visual Opening Transposition Graph
+            {t("graph.title")}
           </h1>
         </div>
 
         <p className="text-xs text-gray-400 max-w-md">
-          Drag to pan, scroll to zoom. Click any opening node to inspect the board position and discover transpositions.
+          {t("graph.subtitle")}
         </p>
       </div>
 

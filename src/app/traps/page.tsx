@@ -7,6 +7,7 @@ import { ChessBoard } from "@/components/chess/ChessBoard";
 import { ChessGameEngine } from "@/lib/chess/engine";
 import { Zap, Flame, Shield, ArrowLeft, ArrowRight, RotateCcw, Lightbulb, CheckCircle2, AlertTriangle, Sparkles, Filter } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { t } from "@/lib/i18n";
 
 function playSafeTrapMove(engine: ChessGameEngine, moveStr: string): boolean {
   if (!moveStr) return false;
@@ -129,13 +130,13 @@ export default function TrapsGuidePage() {
         <div>
           <div className="flex items-center gap-2 text-brand-accent font-mono text-xs font-bold uppercase tracking-wider">
             <Zap className="w-4 h-4" />
-            <span>Opening Tactics & Traps Guide</span>
+            <span>{t("traps.subtitle")}</span>
           </div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground tracking-tight mt-1">
-            Famous Opening Traps
+            {t("traps.title")}
           </h1>
           <p className="text-sm text-gray-400 mt-1 max-w-2xl">
-            Master tactical traps, gambit punishments, and early checkmate patterns. Learn how to execute or avoid opening traps step-by-step.
+            {t("traps.subtitle")}
           </p>
         </div>
 
@@ -145,7 +146,7 @@ export default function TrapsGuidePage() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-muted hover:bg-surface-hover border border-surface-border text-xs font-mono font-bold text-gray-300 hover:text-white transition-colors self-start md:self-auto"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Traps Catalog</span>
+            <span>{t("traps.backToCatalog")}</span>
           </button>
         )}
       </div>
