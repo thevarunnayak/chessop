@@ -176,8 +176,8 @@ export function buildOpeningGraph(filterCategory?: string, searchQuery?: string,
     nodesByDepth[node.depth].push(node);
   });
 
-  const X_SPACING = 220;
-  const Y_SPACING = 52;
+  const X_SPACING = 286;
+  const Y_SPACING = 78;
 
   Object.entries(nodesByDepth).forEach(([dStr, nodeList]) => {
     const d = parseInt(dStr, 10);
