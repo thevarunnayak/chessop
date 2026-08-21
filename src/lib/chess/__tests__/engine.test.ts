@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { ChessGameEngine, normalizeFen } from "../engine";
+import { uciToSan, uciToSanLine } from "../engineAnalysis";
 
 describe("ChessGameEngine & FEN Utilities", () => {
   let engine: ChessGameEngine;
@@ -40,5 +41,13 @@ describe("ChessGameEngine & FEN Utilities", () => {
     const success = engine.loadPgn(pgn);
     expect(success).toBe(true);
     expect(engine.getSanHistory()).toEqual(["e4", "c5", "Nf3", "d6", "d4", "cxd4", "Nxd4", "Nf6"]);
+  });
+
+  it("should convert UCI move b8c6 to SAN Nc6 correctly", () => {
+    const fen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2";
+    expect(uciToSan(fen, "b8c6")).toBe("Nc6");
+
+    const line = uciToSanLine(fen, ["b8c6", "f1b5", "g8f6", "e1h1", "f6e4"]);
+    expect(line).toEqual(["Nc6", "Bb5", "Nf6", "O-O", "Nxe4"]);
   });
 });

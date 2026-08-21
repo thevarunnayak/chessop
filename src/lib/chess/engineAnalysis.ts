@@ -1,6 +1,6 @@
 "use client";
 
-import { Chess } from "chess.js";
+import { Chess, Square } from "chess.js";
 
 export interface PvLine {
   cp?: number;
@@ -15,6 +15,107 @@ export interface EngineEvalResult {
   depth: number;
   pvs: PvLine[];
   isCloud: boolean;
+}
+
+/**
+ * Converts a single UCI move (e.g. "b8c6", "e1g1", "e1h1", "e7e8q") to SAN notation for a given position.
+ */
+export function uciToSan(fen: string, uci: string): string {
+  if (!fen || !uci || uci.length < 2) return uci;
+
+  try {
+    const chess = new Chess(fen);
+    if (uci.length >= 4) {
+      let from = uci.slice(0, 2);
+      let to = uci.slice(2, 4);
+      const promotion = uci.length > 4 ? uci.slice(4, 5) : undefined;
+
+      // Normalize Chess960 UCI castling format (e.g., Lichess "e1h1" -> "e1g1", "e8h8" -> "e8g8")
+      const piece = chess.get(from as Square);
+      if (piece && piece.type === "k") {
+        if (from === "e1" && to === "h1") to = "g1";
+        else if (from === "e8" && to === "h8") to = "g8";
+        else if (from === "e1" && to === "a1") to = "c1";
+        else if (from === "e8" && to === "a8") to = "c8";
+      }
+
+      try {
+        const moveRes = chess.move({ from, to, promotion });
+        if (moveRes) return moveRes.san;
+      } catch {}
+    }
+
+    // Try direct string move (if move was already in SAN or standard format)
+    try {
+      const moveRes = chess.move(uci);
+      if (moveRes) return moveRes.san;
+    } catch {}
+
+    return uci;
+  } catch {
+    return uci;
+  }
+}
+
+/**
+ * Converts a sequence of UCI moves to an array of SAN move strings for a given position.
+ */
+export function uciToSanLine(fen: string, uciMoves: string[]): string[] {
+  try {
+    const chess = new Chess(fen);
+    const sanMoves: string[] = [];
+
+    for (const uci of uciMoves) {
+      if (!uci || uci.length < 2) continue;
+
+      let moveRes = null;
+
+      if (uci.length >= 4) {
+        let from = uci.slice(0, 2);
+        let to = uci.slice(2, 4);
+        const promotion = uci.length > 4 ? uci.slice(4, 5) : undefined;
+
+        // Handle Chess960 castling notation from Lichess/Stockfish
+        const piece = chess.get(from as Square);
+        if (piece && piece.type === "k") {
+          if (from === "e1" && to === "h1") to = "g1";
+          else if (from === "e8" && to === "h8") to = "g8";
+          else if (from === "e1" && to === "a1") to = "c1";
+          else if (from === "e8" && to === "a8") to = "c8";
+        }
+
+        try {
+          moveRes = chess.move({ from, to, promotion });
+        } catch {
+          moveRes = null;
+        }
+      }
+
+      if (!moveRes) {
+        try {
+          moveRes = chess.move(uci);
+        } catch {
+          moveRes = null;
+        }
+      }
+
+      if (moveRes) {
+        sanMoves.push(moveRes.san);
+      } else {
+        // If conversion fails mid-line, attempt standalone uciToSan fallback
+        const fallbackSan = uciToSan(chess.fen(), uci);
+        if (fallbackSan && fallbackSan !== uci) {
+          sanMoves.push(fallbackSan);
+        } else {
+          break;
+        }
+      }
+    }
+
+    return sanMoves;
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchEngineEvaluation(fen: string, multiPvCount: number = 3): Promise<EngineEvalResult | null> {
@@ -33,13 +134,14 @@ export async function fetchEngineEvaluation(fen: string, multiPvCount: number = 
 
     const parsedPvs: PvLine[] = data.pvs.slice(0, multiPvCount).map((pv: any) => {
       const uciMoves: string[] = pv.moves ? pv.moves.split(/\s+/).filter(Boolean) : [];
-      const pvSan = uciToSanLine(fen, uciMoves.slice(0, 6));
+      const pvSan = uciToSanLine(fen, uciMoves.slice(0, 8));
+      const firstSan = pvSan[0] || (uciMoves[0] ? uciToSan(fen, uciMoves[0]) : "");
 
       return {
         cp: pv.cp,
         mate: pv.mate,
-        bestMoveSan: pvSan[0] || uciMoves[0],
-        uciMoves: uciMoves.slice(0, 6),
+        bestMoveSan: firstSan,
+        uciMoves: uciMoves.slice(0, 8),
         pvSan,
       };
     });
@@ -52,30 +154,6 @@ export async function fetchEngineEvaluation(fen: string, multiPvCount: number = 
     };
   } catch {
     return fallbackMultiPvEval(fen);
-  }
-}
-
-function uciToSanLine(fen: string, uciMoves: string[]): string[] {
-  try {
-    const chess = new Chess(fen);
-    const sanMoves: string[] = [];
-
-    for (const uci of uciMoves) {
-      const from = uci.slice(0, 2);
-      const to = uci.slice(2, 4);
-      const promotion = uci.length > 4 ? uci.slice(4, 5) : undefined;
-
-      const moveRes = chess.move({ from, to, promotion });
-      if (moveRes) {
-        sanMoves.push(moveRes.san);
-      } else {
-        break;
-      }
-    }
-
-    return sanMoves;
-  } catch {
-    return [];
   }
 }
 
